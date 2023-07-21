@@ -2,71 +2,92 @@ library(condor)
 
 execute = TRUE
 if(execute)
-  session = ssh_connect("claudioc@SUVOFPSUBMIT")
+  session <- ssh_connect("NOUOFPCALC02")
 
 # Directories
-proj.dir   = ".."
-dir.condor = file.path(proj.dir, "stepLor_M")    # doitall.sh
-dir.input  = file.path(proj.dir, "stepLor_M")  # skj.frq, skj.ini, skj.tag
-dir.mfcl   = file.path(proj.dir, "mfcl2111")            # condor.sub, condor_run.sh, mfcl.cfg, mfclo64
-dir.output = file.path(proj.dir, "model_runs")      # [place to put grid models]
+proj.dir <-".."
 
-jobs.group = "stepLor_M_hess7a2111"
+dir.input <- file.path(proj.dir, "13daM2F0C0_50")    # doitall.sh *.frq, *.ini, *.tag, *.age_length, condor.sub, condor_run.sh, mfcl.cfg, mfclo64
+dir.output <- file.path(proj.dir, "Mix1GridModels")  # [place to put grid models]
 
-#S1 <- 0.65; S2 <- 0.8; S3 <- 0.95
-S <- 0.8 #c(S1, S2, S3)
-T <- "T2"# c("T1", "T2", "T3") # different T for different doitall 
-# G1 estimated growth; G2 fix growth parameters from team JAJ 
-# dont forget to change the G1 or G2 definition in runname otherwise you will mess up the names
+frq_file <- "bet.frq"
+ini_file <- "bet.ini"
+tag_file <- "bet.tag"
+age_length_file <- "bet.age_length"
+jobs.group <- "grid_m1"
+hess <-TRUE
 
-#M <- seq(8, 15, 1)    # different values for M multiplier
-RR <- c(98) #seq(91, 99, 1)  # reporting rates from 0.91 to 0.99
+size <- c(10,20,40)
+age <- c(0.5,0.75,1.0)
+steep <- c(0.65,0.8,0.95)
+
+#######################################################################################
 
 # Create grid model directories and run if 'executable' is TRUE
-for(k in 1:length(RR)){ #length(RR)){
-  #for(i in 1:2){ #length(T)){
-  #  for(j in 1:2){ #length(S)){
-      # i=1
-      # j=1
-      # k=1
-      cat(", k=", k, "\n", sep="")
-      runname = paste0(jobs.group,"_",RR[k])#paste0(T, "G1", S, "_", RR[k])  # G2 means fixed growth
-      model.run.dir = file.path(dir.output, jobs.group,runname)
+for(i in 1:length(size))
+{ 
+  for(j in 1:length(age))
+  {
+    for(k in 1:length(steep))
+    {
+      cat("i=", i, ", j=", j, ", k=", k, "\n", sep="")
+      a.label <- formatC(100*age, width=3, flag="0")
+      h.label <- formatC(100*steep, width=3, flag="0")
+      runname <- paste0(jobs.group, "_s", size[i], "_a", a.label[j], "_h", h.label[k])
+      model.run.dir <- file.path(dir.output, jobs.group, runname)
+
       # create directory for model run
       if (! dir.exists(model.run.dir)) dir.create(model.run.dir, recursive = TRUE)
-      file.copy(file.path(dir.input, c("skj.frq", "skj.ini", "skj.tag")), model.run.dir, overwrite=TRUE)
-      file.copy(file.path(dir.condor, "doitall.sh"), model.run.dir, overwrite=TRUE)
-      file.copy(file.path(dir.mfcl, c("condor.sub", "condor_run.sh", "mfcl.cfg", "mfclo64")),
+      file.copy(file.path(dir.input, c(frq_file, ini_file, tag_file, age_length_file, "doitall.sh")), 
+                model.run.dir, overwrite=TRUE)
+      file.copy(file.path(dir.input, c("condor.sub", "condor_run.sh", "mfcl.cfg", "mfclo64")),
                 model.run.dir, overwrite=TRUE)
       
-      # ini: steepness, growth, (movement)
-      # newmov   = readLines(paste0(model.run.dir, "movement.txt"))
-      ini  = readLines(file.path(model.run.dir, "skj.ini"))
-      pointer.h1  = grep("# sv(29)", ini, fixed = TRUE)
-      pointer.h2 = grep("# Generic SD of length at age", ini, fixed = TRUE)
-      ini[(pointer.h1+1):(pointer.h2-1)] <- S
-      writeLines(ini, file.path(model.run.dir, "skj.ini"))
+      # doitall.sh: size weight, age weight, Hessian
+      doitall <- readLines(file.path(model.run.dir, "doitall.sh"), warn = FALSE)
+      pointer <- grep(" -999 49 20", doitall, fixed = TRUE)  
+      doitall[pointer] <- paste(" -999 49", size[i],"      # divide LF sample sizes by 20 (default=10)")
+      pointer <- grep(" -999 50 20", doitall, fixed = TRUE)  
+      doitall[pointer] <- paste(" -999 50", size[i],"      # divide WF sample sizes by 20 (default=10)")
+      # divide LF & WF samples in 2 again for LL + index
+      pointer <- grep(" 49 40", doitall, fixed = TRUE)      
+      doitall[pointer] <- gsub(" 49 40", paste(" 49", 2*size[i]), doitall[pointer])
+      pointer <- grep(" 50 40", doitall, fixed = TRUE)
+      doitall[pointer] <- gsub(" 50 40", paste(" 50", 2*size[i]), doitall[pointer])
 
-      # doitall.sh: reporting rate, Hessian, M multiplier
-      doitall = readLines(file.path(model.run.dir, "doitall.sh"), warn = FALSE)
-      # pointer = grep(" 2 128 11       # Initial Z is M*1.1", doitall, fixed=TRUE)  # M multiplier
-      # tmp.doitall[pointer] = paste0(" 2 128 ", M[k],"       # Initial Z is M*1.1 ", tmp.doitall,fixed=TRUE)
-      pointer.rr = grep(" 1 33 90 ", doitall, fixed = TRUE)  # maximum tag reporting rate
-      doitall[pointer.rr] = paste(" 1 33", RR[k],"  # Maximum tag reporting rate for all fisheries")
+      # .age_length: age weighting
+      age_l <- readLines(file.path(model.run.dir, age_length_file))
+      pointer.0 <- grep("# num age length records", age_l, fixed = TRUE)
+      num_age_length_records <- as.integer(age_l[pointer.0+1])
+      pointer.1 <- grep("# effective sample size", age_l, fixed = TRUE)
+      pointer.2 <- grep("# Year   Month   Fishery   Species", age_l, fixed = TRUE)
+      pointer.3 <- pointer.2[1]
+      age_l[(pointer.1+1):(pointer.3-1)] <- paste(rep(age[j], times=num_age_length_records), collapse=" ")
+      writeLines(age_l, file.path(model.run.dir, age_length_file))
       
-      doitall = c(doitall, c("# ------------",
-                             "# PHASE 8 - Hessian Calcs",
-                             "# ------------",
-                             "if [ ! -f junk ]; then",
-                             "$MFCL skj.frq 07a.par junk -switch 2 1 1 1 1 145 3",
-                             "$MFCL skj.frq 07a.par junk -switch 2 1 1 1 1 145 4",
-                             "$MFCL skj.frq 07a.par junk -switch 2 1 1 1 1 145 5",
-                             "fi"))  
-      writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
-
+      # ini: steepness
+      ini <- readLines(file.path(model.run.dir, ini_file))
+      pointer.h1 <- grep("# sv(29)", ini, fixed = TRUE)
+      pointer.h2 <- grep("# Generic SD of length at age", ini, fixed = TRUE)
+      ini[(pointer.h1+1):(pointer.h2-1)] <- steep[k]
+      writeLines(ini, file.path(model.run.dir, ini_file))
+      
+      if (hess)
+      {
+        doitall <- c(doitall, c("# ------------------------",
+                                "# PHASE 11 - Hessian Calcs",
+                                "# ------------------------",
+                                "if [ ! -f junk ]; then",
+                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 3"),
+                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 4"),
+                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 5"),
+                                "fi"))  
+        writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
+      }
+      
       # Execute on condor
       if(execute)
         condor_submit(model.run.dir)
     }
-#  }
-#}
+  }
+}
