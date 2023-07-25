@@ -8,14 +8,14 @@ if(execute)
 proj.dir <-".."
 
 dir.input <- file.path(proj.dir, "13daM2F0C0_50")    # doitall.sh *.frq, *.ini, *.tag, *.age_length, condor.sub, condor_run.sh, mfcl.cfg, mfclo64
-dir.output <- file.path(proj.dir, "Mix1GridModels")  # [place to put grid models]
+dir.output <- file.path(proj.dir, "Mix2GridModels")  # [place to put grid models]
 
 frq_file <- "bet.frq"
 ini_file <- "bet.ini"
 tag_file <- "bet.tag"
 age_length_file <- "bet.age_length"
-jobs.group <- "grid_m1"
-hess <-TRUE
+jobs.group <- "grid_m2"
+hess <-FALSE
 
 size <- c(10,20,40)
 age <- c(0.5,0.75,1.0)
