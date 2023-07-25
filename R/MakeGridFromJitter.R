@@ -1,25 +1,41 @@
 library(condor)
+library(FLR4MFCL)
 
-execute = TRUE
+execute = FALSE
 if(execute)
   session <- ssh_connect("NOUOFPCALC02")
 
 # Directories
 proj.dir <-".."
+model <- "Jitter_14dM1F0C0_50_42"
+jobs.group <- "grid_m1"
 
-dir.input <- file.path(proj.dir, "13daM2F0C0_50")    # doitall.sh *.frq, *.ini, *.tag, *.age_length, condor.sub, condor_run.sh, mfcl.cfg, mfclo64
-dir.output <- file.path(proj.dir, "Mix2GridModels")  # [place to put grid models]
+dir.input <- file.path(proj.dir, model)    # doitall.sh *.frq, *.ini, *.tag, *.age_length, condor.sub, condor_run.sh, mfcl.cfg, mfclo64
+dir.output <- file.path(proj.dir, "Mix1GridModels")  # [place to put grid models]
 
 frq_file <- "bet.frq"
 ini_file <- "bet.ini"
 tag_file <- "bet.tag"
 age_length_file <- "bet.age_length"
-jobs.group <- "grid_m2"
-hess <-FALSE
+LLfisheries <- c(1, 2, 4, 7, 8, 9, 11, 12, 29, 33, 34, 35, 36, 37, 38, 39, 40, 41)
 
 size <- c(10,20,40)
 age <- c(0.5,0.75,1.0)
 steep <- c(0.65,0.8,0.95)
+
+write_doitall <- TRUE
+
+# final_par <- finalPar(dir.input)
+# txt <- readLines(final_par)
+# first_year <- as.integer(txt[which(txt=="# First year in model")+1])
+# par <- read.MFCLPar(final_par, first.yr=first_year)
+# steepness(par) <- 0.6
+
+# flagval(par, -(1:41), 49:50) <- 20
+# flagval(par, -LLfisheries, 49:50) <- 40
+
+# write(par, "d:/test.par")
+
 
 #######################################################################################
 
@@ -38,23 +54,26 @@ for(i in 1:length(size))
 
       # create directory for model run
       if (! dir.exists(model.run.dir)) dir.create(model.run.dir, recursive = TRUE)
-      file.copy(file.path(dir.input, c(frq_file, ini_file, tag_file, age_length_file, "doitall.sh")), 
+      file.copy(file.path(dir.input, c(frq_file, tag_file, age_length_file, "doitall.sh")), 
                 model.run.dir, overwrite=TRUE)
       file.copy(file.path(dir.input, c("condor.sub", "condor_run.sh", "mfcl.cfg", "mfclo64")),
                 model.run.dir, overwrite=TRUE)
       
-      # doitall.sh: size weight, age weight, Hessian
-      doitall <- readLines(file.path(model.run.dir, "doitall.sh"), warn = FALSE)
-      pointer <- grep(" -999 49 20", doitall, fixed = TRUE)  
-      doitall[pointer] <- paste(" -999 49", size[i],"      # divide LF sample sizes by 20 (default=10)")
-      pointer <- grep(" -999 50 20", doitall, fixed = TRUE)  
-      doitall[pointer] <- paste(" -999 50", size[i],"      # divide WF sample sizes by 20 (default=10)")
-      # divide LF & WF samples in 2 again for LL + index
-      pointer <- grep(" 49 40", doitall, fixed = TRUE)      
-      doitall[pointer] <- gsub(" 49 40", paste(" 49", 2*size[i]), doitall[pointer])
-      pointer <- grep(" 50 40", doitall, fixed = TRUE)
-      doitall[pointer] <- gsub(" 50 40", paste(" 50", 2*size[i]), doitall[pointer])
-
+      # Read in par file
+      final_par <- finalPar(dir.input)
+      txt <- readLines(final_par)
+      first_year <- as.integer(txt[which(txt=="# First year in model")+1])
+      par <- read.MFCLPar(final_par, first.yr=first_year)
+      # steepness
+      steepness(par) <- steep[k]
+      # comp data weighting
+      flagval(par, -(1:41), 49:50) <- size[i]
+      flagval(par, -LLfisheries, 49:50) <- 2*size[i]
+      
+      # final_par_out <- file.path(model.run.dir, final_par)
+      final_par_out <- file.path(model.run.dir, "12.par")
+      write(par, final_par_out)
+      
       # .age_length: age weighting
       age_l <- readLines(file.path(model.run.dir, age_length_file))
       pointer.0 <- grep("# num age length records", age_l, fixed = TRUE)
@@ -65,26 +84,31 @@ for(i in 1:length(size))
       age_l[(pointer.1+1):(pointer.3-1)] <- paste(rep(age[j], times=num_age_length_records), collapse=" ")
       writeLines(age_l, file.path(model.run.dir, age_length_file))
       
-      # ini: steepness
-      ini <- readLines(file.path(model.run.dir, ini_file))
-      pointer.h1 <- grep("# sv(29)", ini, fixed = TRUE)
-      pointer.h2 <- grep("# Generic SD of length at age", ini, fixed = TRUE)
-      ini[(pointer.h1+1):(pointer.h2-1)] <- steep[k]
-      writeLines(ini, file.path(model.run.dir, ini_file))
-      
-      if (hess)
+      if (write_doitall)
       {
-        doitall <- c(doitall, c("# ------------------------",
-                                "# PHASE 11 - Hessian Calcs",
-                                "# ------------------------",
-                                "if [ ! -f junk ]; then",
-                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 3"),
-                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 4"),
-                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 5"),
-                                "fi"))  
+        doitall <- c("#!/bin/sh",
+                                "MFCL=./mfclo64",
+                                "#  PHASE 13 - total mortality 1.0",
+                                "# -------------------------------",
+                                "if [ ! -f 13.par ]; then",
+                                paste("  $MFCL", frq_file, "12.par 13.par -file - <<PHASE13"),
+                                paste("  1 1 500"),
+                                paste("  1 50 -5"),
+                                paste("  2 116 100"),
+                                "PHASE 13",
+                                "fi",
+                                "#  PHASE 13 - total mortality 3.0",
+                                "# -------------------------------",                     
+                                "if [ ! -f 14.par ]; then",
+                                paste("  $MFCL", frq_file, "13.par 14.par -file - <<PHASE14"),
+                                paste("  1 1 10000"),
+                                paste("  1 50 -5"),
+                                paste("  2 116 300"),
+                                "PHASE 14",
+                                "fi")
         writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
       }
-      
+          
       # Execute on condor
       if(execute)
         condor_submit(model.run.dir)
