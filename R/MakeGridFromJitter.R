@@ -1,9 +1,10 @@
 library(condor)
 library(FLR4MFCL)
 
-execute = FALSE
+execute = TRUE
 if(execute)
-  session <- ssh_connect("NOUOFPCALC02")
+#  session <- ssh_connect("NOUOFPCALC02")
+  session <- ssh_connect("SUVOFPSUBMIT")
 
 # Directories
 proj.dir <-".."
@@ -25,18 +26,6 @@ age <- c(0.5,0.75,1.0)
 steep <- c(0.65,0.8,0.95)
 
 write_doitall <- TRUE
-
-# final_par <- finalPar(dir.input)
-# txt <- readLines(final_par)
-# first_year <- as.integer(txt[which(txt=="# First year in model")+1])
-# par <- read.MFCLPar(final_par, first.yr=first_year)
-# steepness(par) <- 0.6
-
-# flagval(par, -(1:41), 49:50) <- 20
-# flagval(par, -LLfisheries, 49:50) <- 40
-
-# write(par, "d:/test.par")
-
 
 #######################################################################################
 
@@ -75,6 +64,21 @@ for(i in 1:length(size))
       final_par_out <- file.path(model.run.dir, "12.par")
       write(par, final_par_out)
       
+      # Temporary workaround to solve version conflict between MFCL and FLR4MFCL
+      # => This block of code can be removed when FLR4MFCL is updated (~ Oct 2023)
+      # Manually edit the grid parfile, following MFCL 2.2.2.0 format (vsn 1066)
+      # We insert two lines of text (first year) into the middle of the parfile
+      # But only do this if the first year is not already in the parfile
+      txt <- readLines(final_par_out)
+      if(!any(txt=="# First year in model"))
+      {
+        part2 <- grep("# The grouped_catch_dev_coffs flag", txt, fixed=TRUE)
+        part1 <- part2 - 1
+        n <- length(txt)
+        txt <- c(txt[1:part1], "# First year in model", first_year, txt[part2:n])
+        writeLines(txt, final_par_out)
+      }
+
       # .age_length: age weighting
       age_l <- readLines(file.path(model.run.dir, age_length_file))
       pointer.0 <- grep("# num age length records", age_l, fixed = TRUE)
@@ -112,12 +116,11 @@ for(i in 1:length(size))
                                 "# ------------------------",
                                 "# PHASE 15 - Hessian Calcs",
                                 "# ------------------------",
-                                "if [ ! -f junk ]; then",
                                 paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 1"),
                                 paste("  $MFCL", frq_file, "14.par junk -switch 2 1 37 1 1 145 2"),
                                 paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 4"),
-                                paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 5"),
-                                "fi")
+                                paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 5"))
+                                
         writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
       }
           
