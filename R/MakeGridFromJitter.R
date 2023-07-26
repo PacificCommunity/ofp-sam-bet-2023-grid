@@ -10,7 +10,8 @@ proj.dir <-".."
 model <- "Jitter_14dM1F0C0_50_42"
 jobs.group <- "grid_m1"
 
-dir.input <- file.path(proj.dir, model)    # doitall.sh *.frq, *.ini, *.tag, *.age_length, condor.sub, condor_run.sh, mfcl.cfg, mfclo64
+dir.input <- file.path(proj.dir, model)              # doitall.sh *.frq, *.ini, *.tag, *.age_length
+condor.input <- file.path(proj.dir, "condor")        # condor.sub, condor_run.sh, mfcl.cfg, mfclo64
 dir.output <- file.path(proj.dir, "Mix1GridModels")  # [place to put grid models]
 
 frq_file <- "bet.frq"
@@ -56,7 +57,7 @@ for(i in 1:length(size))
       if (! dir.exists(model.run.dir)) dir.create(model.run.dir, recursive = TRUE)
       file.copy(file.path(dir.input, c(frq_file, tag_file, age_length_file, "doitall.sh")), 
                 model.run.dir, overwrite=TRUE)
-      file.copy(file.path(dir.input, c("condor.sub", "condor_run.sh", "mfcl.cfg", "mfclo64")),
+      file.copy(file.path(condor.input, c("condor.sub", "condor_run.sh", "mfcl.cfg", "mfclo64")),
                 model.run.dir, overwrite=TRUE)
       
       # Read in par file
@@ -88,16 +89,18 @@ for(i in 1:length(size))
       {
         doitall <- c("#!/bin/sh",
                                 "MFCL=./mfclo64",
+                                "# -------------------------------",
                                 "#  PHASE 13 - total mortality 1.0",
                                 "# -------------------------------",
                                 "if [ ! -f 13.par ]; then",
                                 paste("  $MFCL", frq_file, "12.par 13.par -file - <<PHASE13"),
                                 paste("  1 1 500"),
-                                paste("  1 50 -5"),
+                                paste("  1 50 -2"),
                                 paste("  2 116 100"),
                                 "PHASE 13",
                                 "fi",
-                                "#  PHASE 13 - total mortality 3.0",
+                                "# -------------------------------",
+                                "#  PHASE 14 - total mortality 3.0",
                                 "# -------------------------------",                     
                                 "if [ ! -f 14.par ]; then",
                                 paste("  $MFCL", frq_file, "13.par 14.par -file - <<PHASE14"),
@@ -105,6 +108,15 @@ for(i in 1:length(size))
                                 paste("  1 50 -5"),
                                 paste("  2 116 300"),
                                 "PHASE 14",
+                                "fi",
+                                "# ------------------------",
+                                "# PHASE 15 - Hessian Calcs",
+                                "# ------------------------",
+                                "if [ ! -f junk ]; then",
+                                paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 1"),
+                                paste("  $MFCL", frq_file, "14.par junk -switch 2 1 37 1 1 145 2"),
+                                paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 4"),
+                                paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 5"),
                                 "fi")
         writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
       }
