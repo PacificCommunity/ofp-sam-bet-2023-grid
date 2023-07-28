@@ -2,7 +2,7 @@ library(condor)
 library(FLR4MFCL)
 
 execute = TRUE
-if(execute)
+if(execute && !exists("session"))
 #  session <- ssh_connect("NOUOFPCALC02")
   session <- ssh_connect("SUVOFPSUBMIT")
 
@@ -13,7 +13,7 @@ jobs.group <- "grid_m1"
 
 dir.input <- file.path(proj.dir, model)              # doitall.sh *.frq, *.ini, *.tag, *.age_length
 condor.input <- file.path(proj.dir, "condor")        # condor.sub, condor_run.sh, mfcl.cfg, mfclo64
-dir.output <- file.path(proj.dir, "Mix1GridModels")  # [place to put grid models]
+dir.output <- file.path(proj.dir, "Mix1GridModelsNoHess")  # [place to put grid models]
 
 frq_file <- "bet.frq"
 ini_file <- "bet.ini"
@@ -25,7 +25,7 @@ size <- c(10,20,40)
 age <- c(0.5,0.75,1.0)
 steep <- c(0.65,0.8,0.95)
 
-write_doitall <- TRUE
+hess <- FALSE
 
 #######################################################################################
 
@@ -89,7 +89,7 @@ for(i in 1:length(size))
       age_l[(pointer.1+1):(pointer.3-1)] <- paste(rep(age[j], times=num_age_length_records), collapse=" ")
       writeLines(age_l, file.path(model.run.dir, age_length_file))
       
-      if (write_doitall)
+      if (hess)
       {
         doitall <- c("#!/bin/sh",
                                 "MFCL=./mfclo64",
@@ -114,6 +114,25 @@ for(i in 1:length(size))
                                 paste("  $MFCL", frq_file, "14.par junk -switch 1 1 145 5"))
                                 
         writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
+      }
+      else
+      {
+        doitall <- c("#!/bin/sh",
+                     "MFCL=./mfclo64",
+                     "# -------------------------------",
+                     "#  PHASE 13 - total mortality 1.0",
+                     "# -------------------------------",
+                     "if [ ! -f 13.par ]; then",
+                     paste("  $MFCL", frq_file, "12.par 13.par -switch 3 1 1 500 1 50 -2 2 116 100"),
+                     "fi",
+                     "# -------------------------------",
+                     "#  PHASE 14 - total mortality 3.0",
+                     "# -------------------------------",                     
+                     "if [ ! -f 14.par ]; then",
+                     paste("  $MFCL", frq_file, "13.par 14.par -switch 3 1 1 10000 1 50 -5 2 116 300"),
+                     "fi")
+        
+        writeLines(doitall, file.path(model.run.dir, "doitall.sh"))        
       }
           
       # Execute on condor
