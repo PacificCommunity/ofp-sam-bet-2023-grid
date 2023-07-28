@@ -1,6 +1,6 @@
 library(condor)
 
-execute = TRUE
+execute = FALSE
 if(execute)
   session <- ssh_connect("NOUOFPCALC02")
 
@@ -14,6 +14,7 @@ frq_file <- "bet.frq"
 ini_file <- "bet.ini"
 tag_file <- "bet.tag"
 age_length_file <- "bet.age_length"
+doitall_file <- "doitall.sh"
 jobs.group <- "grid_m2"
 hess <-FALSE
 
@@ -38,13 +39,13 @@ for(i in 1:length(size))
 
       # create directory for model run
       if (! dir.exists(model.run.dir)) dir.create(model.run.dir, recursive = TRUE)
-      file.copy(file.path(dir.input, c(frq_file, ini_file, tag_file, age_length_file, "doitall.sh")), 
+      file.copy(file.path(dir.input, c(frq_file, ini_file, tag_file, age_length_file, doitall_file)), 
                 model.run.dir, overwrite=TRUE)
       file.copy(file.path(dir.input, c("condor.sub", "condor_run.sh", "mfcl.cfg", "mfclo64")),
                 model.run.dir, overwrite=TRUE)
       
       # doitall.sh: size weight, age weight, Hessian
-      doitall <- readLines(file.path(model.run.dir, "doitall.sh"), warn = FALSE)
+      doitall <- readLines(file.path(model.run.dir, doitall_file), warn = FALSE)
       pointer <- grep(" -999 49 20", doitall, fixed = TRUE)  
       doitall[pointer] <- paste(" -999 49", size[i],"      # divide LF sample sizes by 20 (default=10)")
       pointer <- grep(" -999 50 20", doitall, fixed = TRUE)  
@@ -54,6 +55,18 @@ for(i in 1:length(size))
       doitall[pointer] <- gsub(" 49 40", paste(" 49", 2*size[i]), doitall[pointer])
       pointer <- grep(" 50 40", doitall, fixed = TRUE)
       doitall[pointer] <- gsub(" 50 40", paste(" 50", 2*size[i]), doitall[pointer])
+      if (hess)
+      {
+        doitall <- c(doitall, c("# ------------------------",
+                                "# PHASE 11 - Hessian Calcs",
+                                "# ------------------------",
+                                "if [ ! -f junk ]; then",
+                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 3"),
+                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 4"),
+                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 5"),
+                                "fi"))  
+      }
+      writeLines(doitall, file.path(model.run.dir, doitall_file))
 
       # .age_length: age weighting
       age_l <- readLines(file.path(model.run.dir, age_length_file))
@@ -71,19 +84,6 @@ for(i in 1:length(size))
       pointer.h2 <- grep("# Generic SD of length at age", ini, fixed = TRUE)
       ini[(pointer.h1+1):(pointer.h2-1)] <- steep[k]
       writeLines(ini, file.path(model.run.dir, ini_file))
-      
-      if (hess)
-      {
-        doitall <- c(doitall, c("# ------------------------",
-                                "# PHASE 11 - Hessian Calcs",
-                                "# ------------------------",
-                                "if [ ! -f junk ]; then",
-                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 3"),
-                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 4"),
-                                paste("  $MFCL", frq_file, "10.par junk -switch 2 1 1 1 1 145 5"),
-                                "fi"))  
-        writeLines(doitall, file.path(model.run.dir, "doitall.sh"))
-      }
       
       # Execute on condor
       if(execute)
