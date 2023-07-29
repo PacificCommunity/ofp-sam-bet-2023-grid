@@ -1,6 +1,6 @@
 library(condor)
 
-execute = FALSE
+execute = TRUE
 if(execute)
   session <- ssh_connect("NOUOFPCALC02")
 
@@ -9,6 +9,7 @@ proj.dir <-".."
 
 dir.input <- file.path(proj.dir, "13daM2F0C0_50")    # doitall.sh *.frq, *.ini, *.tag, *.age_length, condor.sub, condor_run.sh, mfcl.cfg, mfclo64
 dir.output <- file.path(proj.dir, "Mix2GridModels")  # [place to put grid models]
+dir.output <- file.path(proj.dir, "Mixx2GridModels")  # [place to put grid models]
 
 frq_file <- "bet.frq"
 ini_file <- "bet.ini"
@@ -19,6 +20,7 @@ jobs.group <- "grid_m2"
 hess <-FALSE
 
 size <- c(10,20,40)
+size <- c(40)
 age <- c(0.5,0.75,1.0)
 steep <- c(0.65,0.8,0.95)
 
@@ -51,9 +53,8 @@ for(i in 1:length(size))
       pointer <- grep(" -999 50 20", doitall, fixed = TRUE)  
       doitall[pointer] <- paste(" -999 50", size[i],"      # divide WF sample sizes by 20 (default=10)")
       # divide LF & WF samples in 2 again for LL + index
-      pointer <- grep(" 49 40", doitall, fixed = TRUE)      
+      pointer <- grep(" 49 40.* 50 40", doitall)      
       doitall[pointer] <- gsub(" 49 40", paste(" 49", 2*size[i]), doitall[pointer])
-      pointer <- grep(" 50 40", doitall, fixed = TRUE)
       doitall[pointer] <- gsub(" 50 40", paste(" 50", 2*size[i]), doitall[pointer])
       if (hess)
       {
