@@ -24,8 +24,8 @@ grid_results <- function(jitter.dir, round=TRUE)
 
   if(round)
   {
-    objfun.orig <- round(objfun.orig, 0)
-    objfun.best <- round(objfun.best, 0)
+    objfun.orig <- round(objfun.orig, 2)
+    objfun.best <- round(objfun.best, 2)
     grad.orig <- round(grad.orig, 5)
     grad.best <- round(grad.best, 5)
     instant.orig <- round(instant.orig, 3)
