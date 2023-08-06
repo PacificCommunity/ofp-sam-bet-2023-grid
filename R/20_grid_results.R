@@ -42,6 +42,15 @@ folders <- c("d:/bet2023GridOutput/jitterMix1Grid/Jitter_14f_par_m1_s10_a050_h80
              "d:/bet2023GridOutput/jitterMix1Grid/Jitter_14f_par_m1_s40_a075_h80",
              "d:/bet2023GridOutput/jitterMix1Grid/Jitter_14f_par_m1_s40_a100_h80")
 
+# folders <- c("d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s10_a050_h80",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s10_a075_h80_16",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s10_a100_h80_18",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s20_a050_h80_07",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s20_a075_h80_16",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s20_a100_h80_12",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s40_a050_h80_20",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s40_a075_h80_07",
+#              "d:/bet2023GridOutput/Mix1GridBestJitter/Jitter_14f_par_m1_s40_a100_h80_07")
 
 
 
@@ -51,5 +60,6 @@ grid.tab <- do.call(rbind, grid.list)
 ################################################################################
 
 # write.xlsx(grid.tab, "../Mix2grid_results.xlsx")
-write.xlsx(grid.tab, "../Mix1grid_results.xlsx")
+# write.xlsx(grid.tab, "../Mix1grid_results.xlsx")
+write.xlsx(grid.tab, "../Mix1grid_results_improved.xlsx")
 cat("\nWrote grid_results.xlsx\n")
