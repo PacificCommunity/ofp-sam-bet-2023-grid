@@ -36,7 +36,7 @@ for(i in seq_along(models))
                    "test_plot_output", "bet.age_length", "bet.frq", "bet.tag")
   cp(file.path(from, models[i], model.files), file.path(to, "grid", models[i]))
   # Copy Hessian files
-  hessian.files <- c("neigenvalues", "xinit.rpt",
+  hessian.files <- c("neigenvalues", "xinit.rpt", # omit dohessian_standalone.sh
                      "bet.var", "bet_hess_inv_diag", "bet_pos_hess_cor")
   cp(file.path(from.hessian, models[i], hessian.files),
      file.path(to, "grid", models[i]))
@@ -44,4 +44,4 @@ for(i in seq_along(models))
 
 # Then produce zip file in Linux, preserving executable bit for mfclo64 and *.sh
 # $ chmod 755 bin/mfclo64 grid/*/*.sh
-# $ zip -rX zipfile.zip bin grid
+# $ zip -rX zipfile.zip bin grid README.md
