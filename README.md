@@ -2,7 +2,8 @@
 
 Download BET 2023 assessment report:
 
-- **Stock assessment of bigeye tuna in the western and central Pacific Ocean: 2023**\ **[WCPFC-SC19-2023/SA-WP-05](https://meetings.wcpfc.int/node/19353)**
+- **Stock assessment of bigeye tuna in the western and central Pacific Ocean: 2023**\
+  **[WCPFC-SC19-2023/SA-WP-05](https://meetings.wcpfc.int/node/19353)**
 
 Download BET 2023 diagnostic model:
 
@@ -23,4 +24,37 @@ Size data weighting |      3 | Sample sizes divided by 10, 20*, 40
 Age data weighting  |      3 | 0.5, 0.75*, 1
 Steepness           |      3 | 0.65, 0.80*, 0.95
 
-A zip file containing the grid results is available on the **[release page](https://github.com/PacificCommunity/ofp-sam-bet-2023-grid/releases)**.
+## Grid results
+
+The [bet-2023-grid-results.zip](https://github.com/PacificCommunity/ofp-sam-bet-2023-grid/releases/download/file/bet-2023-grid-results.zip) file contains all files necessary to run or browse the BET 2023 grid models.
+
+The grid models are run from a par file, as described in the corresponding `doitall.sh` script. This starting par file is the best of 20 jittered par files from the pre-grid analysis.
+
+The final par and rep files are consistently named `final.par` and `plot-final.par.rep` to facilitate harvesting results from across the 54 grid member models.
+
+Preview of zip file contents:
+
+```
+bet-2023-grid-results.zip
+├── bin
+│   └── mfclo64
+└── grid
+    ├── m1_s10_a050_h65
+    │   ├── 14.par
+    │   ├── 15.par
+    │   ├── bet.age_length
+    │   ├── bet.frq
+    │   ├── bet_hess_inv_diag
+    │   ├── bet_pos_hess_cor
+    │   ├── bet.tag
+    │   ├── bet.var
+    │   ├── doitall.sh
+    │   ├── final.par
+    │   ├── mfcl.cfg
+    │   ├── neigenvalues
+    │   ├── plot-final.par.rep
+    │   ├── test_plot_output
+    │   └── xinit.rpt
+    ├── m1_s10_a050_h80
+    │   ├── ...
+```
