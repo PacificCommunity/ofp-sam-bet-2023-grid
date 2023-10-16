@@ -1,26 +1,28 @@
 # Copy selected model files to upload grid results to web
 
-# yft-2023-grid.zip
+# bet-2023-grid.zip
 #   [bin]
 #     mfclo64
 #   [grid]
 #     m1_s10_a050_h65
 #     ...
+#   README.md
 
-# GitHub ofp-sam-yft-2023-grid/releases/download/file/yft-2023-grid-results.zip
+# GitHub ofp-sam-bet-2023-grid/releases/download/file/bet-2023-grid-results.zip
 
 ################################################################################
 
 library(TAF)  # file utilities
 
 # Source and destination paths
-from <- "c:/spc/full"
-from.hessian <- "c:/spc/full_hessian"
-to <- "c:/spc/yft-2023-grid-results"
+from <- "//penguin/assessments/bet/2023/model_runs/grid/full"
+from.hessian <- "//penguin/assessments/bet/2023/model_runs/grid/full_hessian"
+to <- "."
 # unlink(to, recursive=TRUE)
 
 # Create folders
-models <- dir(from, pattern="m[12]")
+models <- dir(from, pattern="m[12]", full=TRUE)
+models <- basename(models[dir.exists(models)])
 mkdir(file.path(to, "bin"))
 mkdir(file.path(to, "grid", models))
 
@@ -31,11 +33,11 @@ for(i in seq_along(models))
 {
   # Copy model files, including all *.par
   model.files <- c("doitall.sh", "*.par", "mfcl.cfg", "plot-final.par.rep",
-                   "test_plot_output", "yft.age_length", "yft.frq", "yft.tag")
+                   "test_plot_output", "bet.age_length", "bet.frq", "bet.tag")
   cp(file.path(from, models[i], model.files), file.path(to, "grid", models[i]))
   # Copy Hessian files
-  hessian.files <- c("dohessian_standalone.sh", "neigenvalues", "xinit.rpt",
-                     "yft.var", "yft_hess_inv_diag", "yft_pos_hess_cor")
+  hessian.files <- c("neigenvalues", "xinit.rpt",
+                     "bet.var", "bet_hess_inv_diag", "bet_pos_hess_cor")
   cp(file.path(from.hessian, models[i], hessian.files),
      file.path(to, "grid", models[i]))
 }
