@@ -11,7 +11,7 @@ Download BET 2023 diagnostic model:
 
 Download BET 2023 grid results:
 
-- The **[bet-2023-grid](https://github.com/PacificCommunity/ofp-sam-bet-2023-grid/releases)** release page includes a **[bet-2023-grid-results.zip](https://github.com/PacificCommunity/ofp-sam-bet-2023-grid/releases/download/file/bet-2023-grid-results.zip)** file
+- The **[bet-2023-grid](https://github.com/PacificCommunity/ofp-sam-bet-2023-grid)** repository includes a **[bet-2023-grid-results.zip](https://github.com/PacificCommunity/ofp-sam-bet-2023-grid/releases/download/file/bet-2023-grid-results.zip)** file
 
 ## Grid of ensemble models
 
