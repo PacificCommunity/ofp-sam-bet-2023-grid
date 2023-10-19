@@ -6,6 +6,9 @@
 #   [grid]
 #     m1_s10_a050_h65
 #     ...
+#   [notes]
+#     estimation_uncertainty.csv
+#     estimation_uncertainty.R
 #   README.md
 
 # GitHub ofp-sam-bet-2023-grid/releases/download/file/bet-2023-grid-results.zip
@@ -44,4 +47,4 @@ for(i in seq_along(models))
 
 # Then produce zip file in Linux, preserving executable bit for mfclo64 and *.sh
 # $ chmod 755 bin/mfclo64 grid/*/*.sh
-# $ zip -rX zipfile.zip bin grid README.md
+# $ zip -rX zipfile.zip bin grid notes README.md
