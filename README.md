@@ -58,3 +58,16 @@ bet-2023-grid-results.zip
     ├── m1_s10_a050_h80
     │   ├── ...
 ```
+
+## Incorporating structural and estimation uncertainty
+
+The [estimation_uncertainty.R](notes/estimation_uncertainty.R) script uses Monte Carlo simulations to add estimation uncertainty to the structural uncertainty grid estimates of reference points. The resulting means and quantiles are found in [estimation_uncertainty.csv](notes/estimation_uncertainty.csv).
+
+See also Section 6.2.3 and Table 5 in the YFT 2023 stock assessment [report](https://meetings.wcpfc.int/node/19353).
+
+The script requires the FLCore and FLR4MFCL packages:
+
+```
+install_github("flr/FLCore")
+install_github("PacificCommunity/FLR4MFCL")
+```
