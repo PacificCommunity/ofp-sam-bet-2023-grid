@@ -1,4 +1,4 @@
-# BET 2023 Grid
+# BET 2023 Grid Results
 
 Download BET 2023 assessment report:
 
